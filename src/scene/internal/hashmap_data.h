@@ -7,6 +7,9 @@ struct HashmapData {
     int64_t* keys;
     uint32_t* indices;
 
+    int32_t* cell_starts;
+    int32_t* cell_ends;
+
     HashmapData(uint32_t body_count, uint32_t hashmap_size) : hashmap_size(hashmap_size) {
         cudaMallocManaged(&keys, body_count * sizeof(int64_t));
         cudaMallocManaged(&indices, body_count * sizeof(uint32_t));

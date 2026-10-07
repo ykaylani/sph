@@ -5,8 +5,12 @@ set(CMAKE_CUDA_STANDARD 20)
 
 add_executable(
         sph src/main.cu
-        src/hash/hash.cu
-
+        src/hash/hash_fnc.cu
+        src/hash/hash_ranges.cu
 )
 
 set_target_properties(sph PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+target_compile_options(sph PRIVATE
+        $<$<COMPILE_LANGUAGE:CUDA>:--use_fast_math>
+        $<$<AND:$<COMPILE_LANGUAGE:CUDA>,$<PLATFORM_ID:Windows>>:-Xcompiler=/Zc:preprocessor>
+)
