@@ -48,7 +48,7 @@ namespace Propagators {
             thrust::fill(thrust::device, hashmap_data->cell_starts, hashmap_data->cell_starts + hashmap_data->hashmap_size, -1);
             thrust::fill(thrust::device, hashmap_data->cell_ends, hashmap_data->cell_ends + hashmap_data->hashmap_size, -1);
 
-            
+            hashRanges<<<block_threads, blocks_grid>>>(hashmap_data->keys, hashmap_data->cell_starts, hashmap_data->cell_ends, settings->particle_count);
 
             std::swap(particles->positions_one, particles->positions_two);
         }

@@ -1,8 +1,8 @@
 #include <cuda_runtime.h>
 
-__global__ void hashPositions(int64_t* keys_out, uint32_t* indices_out, uint32_t hashmap_size, float4* positions, uint32_t body_count, float smoothing_radius) {
+__global__ void hashPositions(int64_t* keys_out, uint32_t* indices_out, uint32_t hashmap_size, float4* positions, uint32_t particle_count, float smoothing_radius) {
     uint32_t idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx >= body_count) return;
+    if (idx >= particle_count) return;
 
     float4 position = positions[idx];
     float sm_inv = 1.0f / smoothing_radius;
