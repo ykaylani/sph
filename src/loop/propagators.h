@@ -4,13 +4,12 @@
 #include <cuda_runtime.h>
 #include <thrust/sort.h>
 #include <thrust/fill.h>
-#include <cstdint>
 
 #include "../scene/scene_settings.h"
 #include "../scene/particle_data.h"
 #include "../scene/internal/hashmap_data.h"
 
-#include "../hash/hash.cuh"
+#include "../kernel/hash/hash.cuh"
 
 constexpr uint16_t block_threads = 256;
 
@@ -36,19 +35,19 @@ namespace Propagators {
 
             uint32_t blocks_grid = (settings->particle_count + block_threads - 1) / block_threads;
 
-            hashPositions<<<block_threads, blocks_grid>>>(
+            hashPositions<<<blocks_grid, block_threads>>>(
                 hashmap_data->keys,
                 hashmap_data->indices,
                 hashmap_data->hashmap_size,
                 particles->positions_one,
                 settings->particle_count,
-                settings->smoothing_radius);
+                settings->inverse_smoothing);
 
             thrust::sort_by_key(thrust::device, hashmap_data->keys, hashmap_data->keys + settings->particle_count, hashmap_data->indices);
             thrust::fill(thrust::device, hashmap_data->cell_starts, hashmap_data->cell_starts + hashmap_data->hashmap_size, -1);
             thrust::fill(thrust::device, hashmap_data->cell_ends, hashmap_data->cell_ends + hashmap_data->hashmap_size, -1);
 
-            hashRanges<<<block_threads, blocks_grid>>>(hashmap_data->keys, hashmap_data->cell_starts, hashmap_data->cell_ends, settings->particle_count);
+            hashRanges<<<blocks_grid, block_threads>>>(hashmap_data->keys, hashmap_data->cell_starts, hashmap_data->cell_ends, settings->particle_count);
 
             std::swap(particles->positions_one, particles->positions_two);
         }

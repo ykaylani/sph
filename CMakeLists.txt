@@ -5,8 +5,11 @@ set(CMAKE_CUDA_STANDARD 20)
 
 add_executable(
         sph src/main.cu
-        src/hash/hash_fnc.cu
-        src/hash/hash_ranges.cu
+        src/kernel/hash/hash_fnc.cu
+        src/kernel/hash/hash_ranges.cu
+        src/scene/internal/intermediate_data.h
+        src/kernel/density/density.cu
+        src/kernel/density/pressure.cu
 )
 
 set_target_properties(sph PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
