@@ -13,6 +13,7 @@
 #include "../kernel/hash/hash.cuh"
 #include "../kernel/pressure/pressure.cuh"
 #include "../kernel/integrate/verlet.cuh"
+#include "../kernel/external_forces/gravity.cuh"
 
 constexpr uint16_t block_threads = 256;
 
@@ -88,6 +89,8 @@ namespace Propagators {
                 particles->accelerations,
                 particles->positions_one,
                 settings->particle_count);
+
+            gravity<<<blocks_grid, block_threads>>>(particles->accelerations, settings->particle_count);
 
             verlet(particles->positions_one, particles->positions_two, particles->accelerations, settings->particle_count, settings->dt, step);
             std::swap(particles->positions_one, particles->positions_two);
