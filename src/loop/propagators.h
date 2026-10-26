@@ -23,7 +23,7 @@ struct Propagator {
 
     Propagator(SceneSettings* settings, ParticleData* particles) : settings(settings), particles(particles) {}
     virtual ~Propagator() = default;
-    virtual void propagate(uint32_t step);
+    virtual void propagate(uint32_t step) = 0;
 };
 
 namespace Propagators {
@@ -36,7 +36,6 @@ namespace Propagators {
 
         void propagate(uint32_t step) override {
             float dt = settings->dt;
-            float time = step * dt;
 
             uint32_t blocks_grid = (settings->particle_count + block_threads - 1) / block_threads;
 
@@ -92,7 +91,7 @@ namespace Propagators {
 
             gravity<<<blocks_grid, block_threads>>>(particles->accelerations, settings->particle_count);
 
-            verlet(particles->positions_one, particles->positions_two, particles->accelerations, settings->particle_count, settings->dt, step);
+            verlet<<<blocks_grid, block_threads>>>(particles->positions_one, particles->positions_two, particles->accelerations, settings->particle_count, settings->dt, step);
             std::swap(particles->positions_one, particles->positions_two);
         }
     };

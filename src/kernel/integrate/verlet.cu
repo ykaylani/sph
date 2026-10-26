@@ -12,7 +12,20 @@ __global__ void verlet(float4* positions_one, float4* positions_two, float4* acc
 
     float4 position_one = positions_one[idx];
     float4 acceleration = accelerations[idx];
-    if (step == 0) { positions_one[idx] = eulerStart(position_one, acceleration, dt); return; }
+
+    if (step == 0) {
+        float half_dt_sqr = 0.5f * dt * dt;
+
+        positions_two[idx] = {
+            position_one.x + acceleration.x * half_dt_sqr,
+            position_one.y + acceleration.y * half_dt_sqr,
+            position_one.z + acceleration.z * half_dt_sqr,
+            position_one.w
+        };
+
+        return;
+    }
+
     float4 position_two = positions_two[idx];
 
     float dt_sqr = dt * dt;
