@@ -5,9 +5,9 @@ struct IntermediateData {
     float* densities = nullptr;
     float* pressures = nullptr;
 
-    IntermediateData(uint32_t particle_count) {
-        cudaMallocManaged(&densities, particle_count * sizeof(float));
-        cudaMallocManaged(&pressures, particle_count * sizeof(float));
+    IntermediateData(uint32_t total_particle_count) {
+        cudaMallocManaged(&densities, total_particle_count * sizeof(float));
+        cudaMallocManaged(&pressures, total_particle_count * sizeof(float));
     }
 
     ~IntermediateData() {

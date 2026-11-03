@@ -1,0 +1,4 @@
+#ifndef SPH_VISCOSITY_CUH
+#define SPH_VISCOSITY_CUH
+
+#endif //SPH_VISCOSITY_CUH

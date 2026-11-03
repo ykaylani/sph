@@ -9,10 +9,20 @@ struct ParticleData {
     float4* positions_two = nullptr;
     float4* accelerations = nullptr;
 
-    ParticleData(uint32_t particle_count) {
-        cudaMallocManaged(&positions_one, sizeof(float4) * particle_count);
-        cudaMallocManaged(&positions_two, sizeof(float4) * particle_count);
-        cudaMallocManaged(&accelerations, sizeof(float4) * particle_count);
+    uint32_t statics_start = 0; // index in particle array where particles will not be integrated (only add to density)
+    uint32_t dynamic_particle_count = 0;
+    uint32_t static_particle_count = 0;
+    uint32_t total_particles = 0;
+
+    ParticleData(uint32_t dynamicparticle_count, uint32_t staticparticle_count) {
+        statics_start = dynamicparticle_count;
+        dynamic_particle_count = dynamicparticle_count;
+        static_particle_count = staticparticle_count;
+        total_particles = dynamicparticle_count + staticparticle_count;
+
+        cudaMallocManaged(&positions_one, sizeof(float4) * total_particles);
+        cudaMallocManaged(&positions_two, sizeof(float4) * total_particles);
+        cudaMallocManaged(&accelerations, sizeof(float4) * total_particles);
     }
 
     ~ParticleData() {

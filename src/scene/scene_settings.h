@@ -4,7 +4,6 @@
 #include <cstdint>
 
 struct SceneSettings {
-    uint32_t particle_count;
     uint32_t steps;
     float dt;
 

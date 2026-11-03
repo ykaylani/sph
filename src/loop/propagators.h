@@ -35,47 +35,47 @@ namespace Propagators {
         WCSPH(SceneSettings* settings, ParticleData* particles, HashmapData* hashmap, IntermediateData* intermediate_data) : Propagator(settings, particles), hashmap_data(hashmap), intermediate_data(intermediate_data) {}
 
         void propagate(uint32_t step) override {
-            float dt = settings->dt;
 
-            uint32_t blocks_grid = (settings->particle_count + block_threads - 1) / block_threads;
+            uint32_t blocks_grid_total = (particles->total_particles + block_threads - 1) / block_threads;
+            uint32_t blocks_grid_active = (particles->dynamic_particle_count + block_threads - 1) / block_threads;
 
-            hashPositions<<<blocks_grid, block_threads>>>(
+            hashPositions<<<blocks_grid_total, block_threads>>>(
                 hashmap_data->keys,
                 hashmap_data->indices,
                 hashmap_data->hashmap_size,
                 particles->positions_one,
-                settings->particle_count,
+                particles->total_particles,
                 settings->inverse_smoothing);
 
-            thrust::sort_by_key(thrust::device, hashmap_data->keys, hashmap_data->keys + settings->particle_count, hashmap_data->indices);
+            thrust::sort_by_key(thrust::device, hashmap_data->keys, hashmap_data->keys + particles->total_particles, hashmap_data->indices);
             thrust::fill(thrust::device, hashmap_data->cell_starts, hashmap_data->cell_starts + hashmap_data->hashmap_size, -1);
             thrust::fill(thrust::device, hashmap_data->cell_ends, hashmap_data->cell_ends + hashmap_data->hashmap_size, -1);
 
-            hashRanges<<<blocks_grid, block_threads>>>(hashmap_data->keys, hashmap_data->cell_starts, hashmap_data->cell_ends, settings->particle_count);
+            hashRanges<<<blocks_grid_total, block_threads>>>(hashmap_data->keys, hashmap_data->cell_starts, hashmap_data->cell_ends, particles->total_particles);
 
-            density<<<blocks_grid, block_threads>>>(
+            density<<<blocks_grid_total, block_threads>>>(
                 hashmap_data->cell_starts,
                 hashmap_data->cell_ends,
                 hashmap_data->indices,
                 hashmap_data->hashmap_size,
                 particles->positions_one,
-                settings->particle_count,
+                particles->total_particles,
                 settings->inverse_smoothing,
                 settings->smoothing_sqr_inv,
                 settings->smoothing_norm,
                 intermediate_data->densities);
 
-            pressure<<<blocks_grid, block_threads>>>(
+            pressure<<<blocks_grid_total, block_threads>>>(
                 intermediate_data->pressures,
                 intermediate_data->densities,
-                settings->particle_count,
+                particles->total_particles,
                 settings->polytropic,
                 settings->polytropic_inv,
                 settings->rest_density,
                 settings->rest_density_inv,
                 settings->sound_speed);
 
-            pressureAcceleration<<<blocks_grid, block_threads>>>(
+            pressureAcceleration<<<blocks_grid_active, block_threads>>>(
                 intermediate_data->densities,
                 intermediate_data->pressures,
                 hashmap_data->cell_starts,
@@ -87,11 +87,11 @@ namespace Propagators {
                 settings->smoothing_norm,
                 particles->accelerations,
                 particles->positions_one,
-                settings->particle_count);
+                particles->dynamic_particle_count);
 
-            gravity<<<blocks_grid, block_threads>>>(particles->accelerations, settings->particle_count);
+            gravity<<<blocks_grid_active, block_threads>>>(particles->accelerations, particles->dynamic_particle_count);
 
-            verlet<<<blocks_grid, block_threads>>>(particles->positions_one, particles->positions_two, particles->accelerations, settings->particle_count, settings->dt, step);
+            verlet<<<blocks_grid_active, block_threads>>>(particles->positions_one, particles->positions_two, particles->accelerations, particles->dynamic_particle_count, settings->dt, step);
             std::swap(particles->positions_one, particles->positions_two);
         }
     };

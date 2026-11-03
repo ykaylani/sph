@@ -67,7 +67,7 @@ __global__ void pressureAcceleration(
                         gradient_scale * (selected_position.z - neighbor_position.z)};
 
                     float neighbor_density = densities[neighbor_idx];
-                    float weight = -neighbor_mass * (pressures[idx] / (selected_density * selected_density) +pressures[neighbor_idx] / (neighbor_density * neighbor_density));
+                    float weight = -neighbor_mass * (pressures[idx] / (selected_density * selected_density) + pressures[neighbor_idx] / (neighbor_density * neighbor_density));
 
                     acceleration.x += weight * gradW.x;
                     acceleration.y += weight * gradW.y;

@@ -12,6 +12,8 @@ add_executable(
         src/kernel/pressure/pressure_acceleration.cu
         src/kernel/integrate/verlet.cu
         src/kernel/external_forces/gravity.cu
+        src/kernel/viscosity/viscosity.cuh
+        src/kernel/viscosity/viscosity.cu
 )
 
 set_target_properties(sph PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
