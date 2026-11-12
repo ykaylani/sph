@@ -1,4 +1,5 @@
 #include <cuda_runtime.h>
+#include <cstdint>
 #include "hash.cuh"
 
 __global__ void hashPositions(int64_t* keys_out, uint32_t* indices_out, uint32_t hashmap_size, float4* positions, uint32_t particle_count, float inverse_smoothing) {

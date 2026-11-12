@@ -14,5 +14,5 @@ __global__ void pressure(
     uint32_t idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx >= particle_count) return;
 
-    pressure[idx] = rest_density * sound_speed * sound_speed * polytropic_inv * (powf(density[idx] * rest_density_inv, polytropic) - 1.0f);
+    pressure[idx] = fmaxf(rest_density * sound_speed * sound_speed * polytropic_inv * (powf(density[idx] * rest_density_inv, polytropic) - 1.0f), 0.0f);
 }

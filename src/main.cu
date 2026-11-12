@@ -3,8 +3,9 @@
 #include <filesystem>
 
 #include <cuda_runtime.h>
+#include <iostream>
 
-#include "loop/propagators.h"
+#include "loop/propagators.cuh"
 #include "loop/exporters.h"
 #include "scene/particle_data.h"
 #include "scene/scene_settings.h"
@@ -14,7 +15,7 @@ constexpr float spacing = 0.025f;
 
 int main() {
     SceneSettings settings = {
-        .steps = 3000,
+        .steps = 50000,
         .dt = 0.0002f,
         .smoothing_radius = 0.05f,
         .rest_density = 1000.0f,
@@ -39,12 +40,12 @@ int main() {
 
     const float mass = settings.rest_density * spacing * spacing * spacing;
     const float fluid_offset = 0.5f * static_cast<float>(side - 1);
-    const float fluid_min_z = -fluid_offset * spacing;
+    const float fluid_min_y = -fluid_offset * spacing;
 
     for (uint32_t i = 0; i < particles.dynamic_particle_count; ++i) {
         const uint32_t x = i % side;
-        const uint32_t y = (i / side) % side;
-        const uint32_t z = i / (side * side);
+        const uint32_t z = (i / side) % side;
+        const uint32_t y = i / (side * side);
 
         const float4 position = {
             (static_cast<float>(x) - fluid_offset) * spacing,
@@ -60,24 +61,20 @@ int main() {
 
     uint32_t next_static = particles.dynamic_particle_count;
 
-    for (uint32_t z = 0; z < thickness + wall_height; ++z) {
-        for (uint32_t y = 0; y < floor_depth; ++y) {
+    for (uint32_t y = 0; y < thickness + wall_height; ++y) {
+        for (uint32_t z = 0; z < floor_depth; ++z) {
             for (uint32_t x = 0; x < floor_width; ++x) {
-                const bool is_floor = z < thickness;
-                const bool is_wall = x < thickness || x >= floor_width - thickness || y < thickness || y >= floor_depth - thickness;
+                const bool is_floor = y < thickness;
 
+                const bool is_wall = x < thickness || x >= floor_width - thickness || z < thickness || z >= floor_depth - thickness;
                 if (!is_floor && !is_wall) { continue; }
-
-                const float4 position = {
-                    (static_cast<float>(x) - 0.5f * static_cast<float>(floor_width - 1)) * spacing,
-                    (static_cast<float>(y) - 0.5f * static_cast<float>(floor_depth - 1)) * spacing,
-                    fluid_min_z + (static_cast<float>(z) - static_cast<float>(thickness)) * spacing,
-                    mass
-                };
+                const float4 position = {(static_cast<float>(x) - 0.5f * static_cast<float>(floor_width - 1)) * spacing, fluid_min_y + (static_cast<float>(y) - static_cast<float>(thickness)) * spacing, (static_cast<float>(z) - 0.5f * static_cast<float>(floor_depth - 1)) * spacing, mass };
 
                 particles.positions_one[next_static] = position;
                 particles.positions_two[next_static] = position;
-                particles.accelerations[next_static] = {0.0f, 0.0f, 0.0f, 0.0f};
+                particles.accelerations[next_static] =
+                {0.0f, 0.0f, 0.0f, 0.0f};
+
                 ++next_static;
             }
         }
@@ -91,8 +88,8 @@ int main() {
     std::filesystem::path outpath = ".";
     std::filesystem::path filename_xmf = "sphdata";
     std::filesystem::path filename_bin = "sphdatabin";
-    //Exporters::XDMF exporter(settings, outpath, filename_bin, filename_xmf);
-    //exporter.Initialize(particles.total_particles);
+    Exporters::XDMF exporter(settings, outpath, filename_bin, filename_xmf);
+    exporter.Initialize(particles.dynamic_particle_count);
 
     std::cout << "Initialized" << std::endl;
 
@@ -100,9 +97,9 @@ int main() {
         propagator.propagate(step);
         cudaDeviceSynchronize();
 
-        //exporter.Export(particles.positions_one, particles.accelerations, inter_data.pressures, inter_data.densities, step, settings.dt, particles.total_particles);
+        exporter.Export(particles.positions_one, particles.accelerations, inter_data.pressures, inter_data.densities, step, settings.dt, particles.dynamic_particle_count);
     }
 
-    //exporter.Finalize();
+    exporter.Finalize();
     return 0;
 }

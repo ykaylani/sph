@@ -14,6 +14,7 @@
 #include "../kernel/pressure/pressure.cuh"
 #include "../kernel/integrate/verlet.cuh"
 #include "../kernel/external_forces/gravity.cuh"
+#include "../kernel/viscosity/viscosity.cuh"
 
 constexpr uint16_t block_threads = 256;
 
@@ -90,6 +91,24 @@ namespace Propagators {
                 particles->dynamic_particle_count);
 
             gravity<<<blocks_grid_active, block_threads>>>(particles->accelerations, particles->dynamic_particle_count);
+
+            viscosityAcceleration<<<blocks_grid_active, block_threads>>>(
+                intermediate_data->densities,
+                particles->accelerations,
+                particles->positions_one,
+                particles->positions_two,
+                particles->dynamic_particle_count,
+                settings->dt_inv,
+                hashmap_data->cell_starts,
+                hashmap_data->cell_ends,
+                hashmap_data->indices,
+                hashmap_data->hashmap_size,
+                settings->smoothing_radius,
+                settings->inverse_smoothing,
+                settings->smoothing_sqr_inv,
+                settings->smoothing_norm,
+                settings->viscosity_regularization,
+                settings->viscosity);
 
             verlet<<<blocks_grid_active, block_threads>>>(particles->positions_one, particles->positions_two, particles->accelerations, particles->dynamic_particle_count, settings->dt, step);
             std::swap(particles->positions_one, particles->positions_two);

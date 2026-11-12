@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 4.2)
-project(sph CUDA)
+project(sph LANGUAGES CXX CUDA)
 
 set(CMAKE_CUDA_STANDARD 20)
 
@@ -12,7 +12,6 @@ add_executable(
         src/kernel/pressure/pressure_acceleration.cu
         src/kernel/integrate/verlet.cu
         src/kernel/external_forces/gravity.cu
-        src/kernel/viscosity/viscosity.cuh
         src/kernel/viscosity/viscosity.cu
 )
 

@@ -13,6 +13,9 @@ struct SceneSettings {
     float sound_speed;
     float polytropic = 7;
 
+    float viscosity_regularization = 0.01f;
+    float viscosity = 0.05f;
+
     // useful precomputation
 
     float inverse_smoothing = (smoothing_radius != 0.0f) ? (1.0f / smoothing_radius) : 0.0f;
@@ -21,6 +24,8 @@ struct SceneSettings {
 
     float polytropic_inv = 1.0f / polytropic;
     float rest_density_inv = 1.0f / rest_density;
+
+    float dt_inv = 1.0f / dt;
 };
 
 #endif //SPH_SCENE_SETTINGS_H
