@@ -7,12 +7,9 @@ add_executable(
         sph src/main.cu
         src/kernel/hash/hash_fnc.cu
         src/kernel/hash/hash_ranges.cu
-        src/kernel/pressure/density.cu
-        src/kernel/pressure/pressure.cu
-        src/kernel/pressure/pressure_acceleration.cu
-        src/kernel/integrate/verlet.cu
+        src/kernel/wcsph/density.cu
+        src/kernel/wcsph/pressure_viscosity.cu
         src/kernel/external_forces/gravity.cu
-        src/kernel/viscosity/viscosity.cu
 )
 
 set_target_properties(sph PROPERTIES CUDA_SEPARABLE_COMPILATION ON)

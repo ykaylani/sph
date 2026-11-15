@@ -143,7 +143,7 @@ namespace Exporters {
                         )" << bin_filename_.string() << R"(
                       </DataItem>
                     </Geometry>
-                    <Attribute Name="Velocity" AttributeType="Vector" Center="Node">
+                    <Attribute Name="Acceleration" AttributeType="Vector" Center="Node">
                       <DataItem Dimensions=")" << total_particles << R"( 3" NumberType="Float" Precision="4" Format="Binary" Seek=")" << vel_offset << R"(" Endian="Native">
                         )" << bin_filename_.string() << R"(
                       </DataItem>

@@ -11,10 +11,10 @@
 #include "../scene/internal/intermediate_data.h"
 
 #include "../kernel/hash/hash.cuh"
-#include "../kernel/pressure/pressure.cuh"
-#include "../kernel/integrate/verlet.cuh"
+#include "../kernel/wcsph/wcsph.cuh"
 #include "../kernel/external_forces/gravity.cuh"
-#include "../kernel/viscosity/viscosity.cuh"
+
+#include "../kernel/integrators.cuh"
 
 constexpr uint16_t block_threads = 256;
 
@@ -45,8 +45,7 @@ namespace Propagators {
                 hashmap_data->indices,
                 hashmap_data->hashmap_size,
                 particles->positions_one,
-                particles->total_particles,
-                settings->inverse_smoothing);
+                particles->total_particles);
 
             thrust::sort_by_key(thrust::device, hashmap_data->keys, hashmap_data->keys + particles->total_particles, hashmap_data->indices);
             thrust::fill(thrust::device, hashmap_data->cell_starts, hashmap_data->cell_starts + hashmap_data->hashmap_size, -1);
@@ -59,58 +58,36 @@ namespace Propagators {
                 hashmap_data->cell_ends,
                 hashmap_data->indices,
                 hashmap_data->hashmap_size,
+
                 particles->positions_one,
                 particles->total_particles,
-                settings->inverse_smoothing,
-                settings->smoothing_sqr_inv,
-                settings->smoothing_norm,
-                intermediate_data->densities);
 
-            pressure<<<blocks_grid_total, block_threads>>>(
-                intermediate_data->pressures,
                 intermediate_data->densities,
-                particles->total_particles,
-                settings->polytropic,
-                settings->polytropic_inv,
+                intermediate_data->pressures,
+
                 settings->rest_density,
-                settings->rest_density_inv,
-                settings->sound_speed);
+                settings->sound_speed,
+                settings->polytropic);
 
-            pressureAcceleration<<<blocks_grid_active, block_threads>>>(
+            wcsphAcceleration<<<blocks_grid_active, block_threads>>>(
                 intermediate_data->densities,
                 intermediate_data->pressures,
+                settings->viscosity,
+                settings->viscosity_regularization,
+
                 hashmap_data->cell_starts,
                 hashmap_data->cell_ends,
                 hashmap_data->indices,
                 hashmap_data->hashmap_size,
-                settings->inverse_smoothing,
-                settings->smoothing_sqr_inv,
-                settings->smoothing_norm,
+
                 particles->accelerations,
+                particles->velocities,
                 particles->positions_one,
                 particles->dynamic_particle_count);
 
             gravity<<<blocks_grid_active, block_threads>>>(particles->accelerations, particles->dynamic_particle_count);
+            Integrators::siEuler<<<blocks_grid_active, block_threads>>>(particles->positions_one, particles->positions_two, particles->accelerations, particles->velocities, particles->dynamic_particle_count, settings->dt);
 
-            viscosityAcceleration<<<blocks_grid_active, block_threads>>>(
-                intermediate_data->densities,
-                particles->accelerations,
-                particles->positions_one,
-                particles->positions_two,
-                particles->dynamic_particle_count,
-                settings->dt_inv,
-                hashmap_data->cell_starts,
-                hashmap_data->cell_ends,
-                hashmap_data->indices,
-                hashmap_data->hashmap_size,
-                settings->smoothing_radius,
-                settings->inverse_smoothing,
-                settings->smoothing_sqr_inv,
-                settings->smoothing_norm,
-                settings->viscosity_regularization,
-                settings->viscosity);
-
-            verlet<<<blocks_grid_active, block_threads>>>(particles->positions_one, particles->positions_two, particles->accelerations, particles->dynamic_particle_count, settings->dt, step);
             std::swap(particles->positions_one, particles->positions_two);
         }
     };
